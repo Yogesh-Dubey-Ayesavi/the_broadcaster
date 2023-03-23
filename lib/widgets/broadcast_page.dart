@@ -154,15 +154,32 @@ class _BroadCastPageState extends State<BroadCastPage> {
                 return const SizedBox();
               },
             ),
+            ValueListenableBuilder(
+              valueListenable: _helper.sentMessageInstance,
+              builder: (context, contactList, child) {
+                if (contactList.isNotEmpty) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Subtitle(
+                        'Message sent to ',
+                        color: ApplicationColorsDark.applicationGreen,
+                      ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Subtitle(contactList.length.toString())
+                    ],
+                  );
+                }
+                return const SizedBox();
+              },
+            ),
             ApplicationFilledButton(
               buttonlabel: 'Select Contacts',
               active: true,
               ontap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            FilePage(contactsMap: _helper.fileMap)));
+                _helper.onPressSelectContacts(context);
               },
             )
           ],

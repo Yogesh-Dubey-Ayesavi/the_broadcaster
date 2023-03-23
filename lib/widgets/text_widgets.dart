@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../default_colors.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -129,6 +130,7 @@ class ApplicationTextField extends StatelessWidget {
   final TextInputAction? action;
   final Function(String value)? onChanged;
   final TextCapitalization captitalization;
+  final List<TextInputFormatter> inputFormatters;
 
   const ApplicationTextField(
       {Key? key,
@@ -144,6 +146,7 @@ class ApplicationTextField extends StatelessWidget {
       this.backgroundcolor,
       this.action,
       this.captitalization = TextCapitalization.none,
+      this.inputFormatters = const [],
       this.keyboardtype})
       : super(key: key);
 
@@ -163,6 +166,7 @@ class ApplicationTextField extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           placeholder: placeholder,
           suffix: trailing,
+          inputFormatters: inputFormatters,
           cursorColor: Colors.white,
           style: TextStyle(color: ApplicationColorsDark.titleColor),
           onChanged: (value) {

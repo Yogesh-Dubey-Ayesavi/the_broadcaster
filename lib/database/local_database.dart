@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:the_broadcaster/helpers/parser_file_helper.dart';
 import 'package:the_broadcaster/models/broadcast.dart';
 import 'package:the_broadcaster/serviceLocator.dart';
 import 'package:the_broadcaster/utils.dart';
 
+import '../helpers/global_file_instances.dart';
+import '../helpers/parser_helper.dart';
 import '../models/contact.dart';
 
 class LocalDatabase {
@@ -34,14 +37,19 @@ class LocalDatabase {
       onCreate: (db, version) async {
         db.execute(
             'CREATE TABLE broadcasts (id text PRIMARY KEY, createdAt int , message text  )');
+        createParserTable();
       },
     );
+    print(await fetchParsers());
+    serviceLocator.get<GlobalFileHelper>();
+
     broadCasts.value = await fetchBroadCasts();
-    // print(broadCasts.value);
     broadCasts.addListener(() {
       // print("value changed");
     });
     getContactEntriesForBroadCasts();
+    // serviceLocator.get<>()
+    // serviceLocator.get<ParserHelper>();
   }
 
   Future<List<BroadCast>> fetchBroadCasts() async {
@@ -113,7 +121,7 @@ class LocalDatabase {
       }
       await batch.commit();
       final newList = [...broadCast.recipients, ...recipients];
-      print(newList);
+      // print(newList);
 
       final Map<String, List<Contact>> newMap = {};
       mappedContacts.forEach((key, value) {
@@ -211,8 +219,46 @@ class LocalDatabase {
     });
   }
 
-  // Future<Parser>
+  void createParserTable() async {
+    database.transaction((txn) async {
+      await txn.execute(
+          'create table if not exists parsers(fileName text, fieldMap text)');
+    });
+  }
 
+  Future<List<ParserFileHelper>> fetchParsers() async {
+    return database.transaction((txn) async {
+      final list = await txn.query('parsers');
 
+      final another = list
+          .map((e) => ParserFileHelper(
+              e['fileName'] as String, jsonDecode(e['fieldMap'] as String)))
+          .toList();
+      serviceLocator.get<ParserHelper>().parsers.value = another;
 
+      return another;
+    });
+  }
+
+  void insertParserFileHelper(ParserFileHelper helper) {
+    createParserTable();
+    database.transaction((txn) async {
+      await txn.execute(
+          "insert into parsers (fileName,fieldMap) Values('${helper.fileName}','${jsonEncode(helper.fieldMap)}' ) ");
+    });
+  }
+
+  void removeFileParser(String fileName) {
+    database.transaction((txn) async {
+      await txn.delete('parsers', where: 'fileName = "$fileName" ');
+    });
+  }
+
+  void updateParser(ParserFileHelper helper) {
+    database.transaction((txn) async {
+      print('updation');
+      await txn.execute(
+          "update parsers set fieldMap = '${jsonEncode(helper.fieldMap)}' where fileName = '${helper.fileName}'");
+    });
+  }
 }

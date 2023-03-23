@@ -28,7 +28,7 @@ class _AddFilePageState extends State<AddFilePage> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: _fileHelper.loader,
+      valueListenable: serviceLocator.get<GlobalFileHelper>().loader,
       builder: (context, val, child) {
         return AbsorbPointer(
           absorbing: val,
@@ -43,7 +43,7 @@ class _AddFilePageState extends State<AddFilePage> {
                   color: ApplicationColorsDark.applicationBlue,
                 ),
                 onPressed: () async {
-                  if (await _fileHelper.pickFile()) {
+                  if (await _fileHelper.pickFile(context)) {
                     setState(() {});
                   } else {}
                 },
@@ -164,11 +164,11 @@ class _AddFilePageState extends State<AddFilePage> {
                             child: Subtitle('No files to display'));
                       }
 
-                      return const Center(child: CupertinoActivityIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     },
                   ),
                   if (val == true) ...[
-                    const CupertinoActivityIndicator(),
+                    const CircularProgressIndicator(),
                   ],
                 ],
               )),

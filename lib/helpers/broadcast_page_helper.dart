@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -12,6 +14,7 @@ import '../default_colors.dart';
 import '../models/contact.dart';
 import 'package:uuid/uuid.dart';
 
+import '../widgets/select_file_page.dart';
 import '../widgets/text_widgets.dart';
 
 class BroadCastHelper {
@@ -26,6 +29,8 @@ class BroadCastHelper {
 
   Map<String, List<Contact>> fileMap =
       serviceLocator.get<GlobalFileHelper>().fileMap;
+
+  ValueNotifier<List<Contact>> sentMessageInstance = ValueNotifier([]);
 
   addContact(Contact contact, String fileName) {
     selectedContactsFileMap.value[fileName]?.add(contact);
@@ -47,6 +52,12 @@ class BroadCastHelper {
     selectedContactsFileMap.value = newMap;
   }
 
+  updateSentMessageInstance(Contact contact) {
+    final List<Contact> newList = List.from(sentMessageInstance.value);
+    newList.add(contact);
+    sentMessageInstance.value = newList;
+  }
+
   loadData() {
     Map<String, List<Contact>> resultMap = {};
     for (var entry in fileMap.entries) {
@@ -66,28 +77,51 @@ class BroadCastHelper {
   }
 
   Future<bool> sendMessage(BuildContext context) async {
+    List<String> recipients = [];
+    List<Contact> contacts = [];
+    // SmsSender sender = new SmsSender();
+    for (var entry in selectedContactsFileMap.value.entries) {
+      recipients
+          .addAll(entry.value.map((e) => e.phoneNumber.toString()).toList());
+      contacts.addAll(entry.value);
+    }
+
+    final permission = Permission.sms.request();
+
     if (textEditingController.text.isNotEmpty && _getContacts().isNotEmpty) {
-      List<String> recipients = [];
-      // SmsSender sender = new SmsSender();
-      for (var entry in selectedContactsFileMap.value.entries) {
-        recipients
-            .addAll(entry.value.map((e) => e.phoneNumber.toString()).toList());
-      }
-      final permission = Permission.sms.request();
-      if (await permission.isGranted) {
-        final res = await sendSMS(
-          message: textEditingController.text,
-          recipients: recipients,
-          sendDirect: true,
-        );
-        if (res != null) {
-          return createBroadCast(BroadCast(
-            textEditingController.text,
-            createdAt: DateTime.now().millisecondsSinceEpoch,
-            id: "u${removeSpecialCharacters(const Uuid().v4())}",
-            recipients: _getContacts(),
-            mappedContacts: selectedContactsFileMap.value,
-          ));
+      if (getInstanceVariables().isNotEmpty) {
+        for (var i = 0; i < recipients.length; i++) {
+          sendSMS(
+            message: getCustomMessage(textEditingController.text, contacts[i]),
+            recipients: [recipients[i]],
+            sendDirect: true,
+          ).then((value) {
+            updateSentMessageInstance(contacts[i]);
+          });
+        }
+        return createBroadCast(BroadCast(
+          textEditingController.text,
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          id: "u${removeSpecialCharacters(const Uuid().v4())}",
+          recipients: _getContacts(),
+          mappedContacts: selectedContactsFileMap.value,
+        ));
+        // getCustomMessage(textEditingController.text, recipients[0]);
+      } else {
+        if (await permission.isGranted) {
+          final res = await sendSMS(
+            message: textEditingController.text,
+            recipients: recipients,
+          );
+          if (res != null) {
+            return createBroadCast(BroadCast(
+              textEditingController.text,
+              createdAt: DateTime.now().millisecondsSinceEpoch,
+              id: "u${removeSpecialCharacters(const Uuid().v4())}",
+              recipients: _getContacts(),
+              mappedContacts: selectedContactsFileMap.value,
+            ));
+          }
         }
       }
     } else {
@@ -142,5 +176,52 @@ class BroadCastHelper {
     } catch (e) {
       return false;
     }
+  }
+
+  List<String> getInstanceVariables() {
+    final List<String> list = [];
+    final regex = RegExp(r'\$(\w)+').allMatches(textEditingController.text);
+    for (var element in regex) {
+      list.add(textEditingController.text
+          .substring(element.start, element.end)
+          .substring(1));
+    }
+    return list;
+  }
+
+  void onPressSelectContacts(BuildContext context) {
+    final list = getInstanceVariables();
+    final Map<String, List<Contact>> resMap = {};
+    for (var element in fileMap.entries) {
+      final keys = serviceLocator
+          .get<GlobalFileHelper>()
+          .getParser(element.key)
+          ?.fieldMap
+          .keys;
+      list.remove('phoneNumber');
+      final newList = keys?.toList();
+      newList?.remove('phoneNumber');
+      if (newList != null && listContainsAll(newList, list)) {
+        resMap.putIfAbsent(element.key, () => element.value);
+      }
+      // print('$list , ${newList}');
+    }
+    // print(resMap);
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => FilePage(contactsMap: resMap)));
+  }
+
+  bool listContainsAll<T>(List<T> a, List<T> b) {
+    final setA = Set.of(a);
+    return setA.containsAll(b);
+  }
+
+  String getCustomMessage(String message, Contact contact) {
+    //  final regex = RegExp(r'\$(\w)+').allMatches(textEditingController.text);
+    // print('hello');
+
+    return message.replaceAllMapped(RegExp(r'\$(\w)+'), (match) {
+      return '${contact.fieldMap[(match.group(0)?.substring(1))]}';
+    });  
   }
 }

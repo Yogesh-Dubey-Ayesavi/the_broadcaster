@@ -2,8 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:the_broadcaster/database/local_database.dart';
+import 'package:the_broadcaster/helpers/add_parser_helper.dart';
+import 'package:the_broadcaster/helpers/parser_file_helper.dart';
+import 'package:the_broadcaster/helpers/parser_helper.dart';
+import 'package:the_broadcaster/widgets/reusables/application_button.dart';
 import 'package:the_broadcaster/widgets/select_contacts_page.dart';
 import 'package:the_broadcaster/widgets/text_widgets.dart';
 
@@ -11,15 +17,23 @@ import '../default_colors.dart';
 import '../helpers/global_file_instances.dart';
 import '../helpers/select_file_helper.dart';
 import '../serviceLocator.dart';
+import 'add_parser_page.dart';
 
 class ParserFilePage extends StatefulWidget {
-  const ParserFilePage({super.key});
+  const ParserFilePage(this.helper, {super.key});
+
+  final ParserFileHelper helper;
 
   @override
   State<ParserFilePage> createState() => _ParserFilePageState();
 }
 
 class _ParserFilePageState extends State<ParserFilePage> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,20 +42,7 @@ class _ParserFilePageState extends State<ParserFilePage> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-            child: Caption(
-              "Message",
-              color: ApplicationColorsDark.applicationBlue,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ApplicationTextField(
-              placeholder: 'Add phone number field in csv file',
-              maxLength: 100,
-            ),
-          ),
+          
         ],
       ),
     );
@@ -56,7 +57,7 @@ class ParserPage extends StatefulWidget {
 
 class _ParserPageState extends State<ParserPage> {
   late final FileHelper _fileHelper;
-  List<File?> files = [];
+  List<ParserFileHelper> files = [];
 
   @override
   void initState() {
@@ -67,13 +68,13 @@ class _ParserPageState extends State<ParserPage> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: _fileHelper.loader,
+      valueListenable: serviceLocator.get<GlobalFileHelper>(). loader,
       builder: (context, val, child) {
         return AbsorbPointer(
           absorbing: val,
           child: Scaffold(
               appBar: AppBar(
-                title: const SecondaryHeadline('Add Files'),
+                title: const SecondaryHeadline('Parser File'),
               ),
               floatingActionButton: FloatingActionButton(
                 backgroundColor: ApplicationColorsDark.secondaryColor,
@@ -82,18 +83,19 @@ class _ParserPageState extends State<ParserPage> {
                   color: ApplicationColorsDark.applicationBlue,
                 ),
                 onPressed: () async {
-                  if (await _fileHelper.pickFile()) {
-                    setState(() {});
-                  } else {}
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AddParserFilePage()));
                 },
               ),
               body: Stack(
                 children: [
                   FutureBuilder(
-                    future: _fileHelper.getFiles(),
+                    future: serviceLocator.get<LocalDatabase>().fetchParsers(),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
-                        snapshot.data as List<File?>;
+                        snapshot.data as List<ParserFileHelper>;
                         files = snapshot.data!;
                         if (files.isNotEmpty) {
                           return ListView.builder(
@@ -112,7 +114,7 @@ class _ParserPageState extends State<ParserPage> {
                                     color:
                                         ApplicationColorsDark.applicationBlue,
                                   ),
-                                  title: Subtitle(file?.name),
+                                  title: Subtitle(file.fileName),
                                   trailing: IconButton(
                                       onPressed: () {
                                         try {
@@ -120,7 +122,7 @@ class _ParserPageState extends State<ParserPage> {
                                               context,
                                               MaterialPageRoute(
                                                   builder: (context) =>
-                                                      ParserFilePage()));
+                                                      AddParserFilePage(parserFileHelper: file,)));
                                         } catch (e) {
                                           print(e);
                                         }
@@ -149,6 +151,101 @@ class _ParserPageState extends State<ParserPage> {
               )),
         );
       },
+    );
+  }
+}
+
+class Fillers extends StatelessWidget {
+  const Fillers(this._helper, {super.key});
+
+  final AddParserHelper _helper;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          tooltip: "Add Key",
+          onPressed: _helper.newFieldAdded,
+          icon: Icon(
+            CupertinoIcons.add,
+            color: ApplicationColorsDark.applicationBlue,
+          ),
+        ),
+        Flexible(
+            child: ApplicationTextField(
+          controller: _helper.newFieldController,
+          placeholder: "Add new field",
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r"\s")),
+            FilteringTextInputFormatter.allow(RegExp(r'^[A-Za-z0-9_.]+$')),
+          ],
+        )),
+        const SizedBox(
+          width: 10,
+        ),
+        Flexible(
+            child: ApplicationTextField(
+          controller: _helper.newFieldValueController,
+          placeholder: "Add new Value",
+        ))
+      ],
+    );
+  }
+}
+
+class FieldValueWidget extends StatelessWidget {
+  const FieldValueWidget(this.field, this.value,
+      {super.key, required this.helper});
+
+  final String field;
+  final String value;
+  final AddParserHelper helper;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      width: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Card(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(10.0),
+                ),
+              ),
+              color: ApplicationColorsDark.secondaryColor,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Subtitle(
+                      field,
+                    ),
+                    const Subtitle("  :  "),
+                    Label(value),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: "Remove Key",
+            onPressed: () {
+              helper.removeKey(field);
+            },
+            icon: Icon(
+              CupertinoIcons.minus_circle,
+              color: ApplicationColorsDark.applicationBlue,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

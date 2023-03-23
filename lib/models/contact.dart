@@ -6,7 +6,7 @@ part 'contact.g.dart';
 
 @JsonSerializable()
 class Contact {
-  Contact(this.phoneNumber, {this.name, required this.fileName});
+  Contact(this.phoneNumber, {this.name, required this.fileName,this.fieldMap = const {}});
 
   final String? name;
 
@@ -15,6 +15,8 @@ class Contact {
   final String fileName;
 
   final ValueNotifier<bool> isSelected = ValueNotifier(false);
+
+  final Map<String, String> fieldMap;
 
   factory Contact.fromJson(Map<String, dynamic> json) =>
       _$ContactFromJson(json);

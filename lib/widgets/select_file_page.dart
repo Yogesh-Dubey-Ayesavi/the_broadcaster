@@ -11,8 +11,10 @@ import 'package:the_broadcaster/widgets/select_contacts_page.dart';
 import 'package:the_broadcaster/widgets/text_widgets.dart';
 
 import '../default_colors.dart';
+import '../helpers/global_file_instances.dart';
 import '../models/broadcast.dart';
 import '../models/contact.dart';
+import '../serviceLocator.dart';
 
 class FilePage extends StatefulWidget {
   const FilePage({super.key, required this.contactsMap});
@@ -37,7 +39,7 @@ class _FilePageState extends State<FilePage> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: _fileHelper.loader,
+      valueListenable: serviceLocator.get<GlobalFileHelper>().loader,
       builder: (context, val, child) {
         return AbsorbPointer(
           absorbing: val,
@@ -52,7 +54,7 @@ class _FilePageState extends State<FilePage> {
                   color: ApplicationColorsDark.applicationBlue,
                 ),
                 onPressed: () async {
-                  if (await _fileHelper.pickFile()) {
+                  if (await _fileHelper.pickFile(context)) {
                     setState(() {});
                   } else {}
                 },

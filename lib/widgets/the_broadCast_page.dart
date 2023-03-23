@@ -53,19 +53,19 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
             ),
-            // ListTile(
-            //   leading: Icon(
-            //     Icons.code,
-            //     color: ApplicationColorsDark.applicationBlue,
-            //   ),
-            //   title: const Subtitle("Parser"),
-            //   onTap: () {
-            //     Navigator.push(
-            //         context,
-            //         MaterialPageRoute(
-            //             builder: (context) => const ParserPage()));
-            //   },
-            // ),
+            ListTile(
+              leading: Icon(
+                Icons.code,
+                color: ApplicationColorsDark.applicationBlue,
+              ),
+              title: const Subtitle("Parser"),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ParserPage()));
+              },
+            ),
           ],
         ),
       ),

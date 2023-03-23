@@ -7,6 +7,7 @@ import 'package:the_broadcaster/helpers/global_file_instances.dart';
 import 'package:the_broadcaster/revision/revision_helpers.dart/broadcast_helper.dart';
 import 'package:the_broadcaster/serviceLocator.dart';
 import 'package:the_broadcaster/utils.dart';
+import 'package:the_broadcaster/widgets/more_info_profile.dart';
 import 'package:the_broadcaster/widgets/reusables/application_button.dart';
 import 'package:the_broadcaster/widgets/reusables/contact_tile.dart';
 import 'package:the_broadcaster/widgets/reusables/file_tile.dart';
@@ -119,6 +120,22 @@ class _ContactsPageState extends State<ContactsPage> {
                       ),
                       title: Label(contact.name ?? "Not Provided"),
                       subtitle: Subtitle(contact.phoneNumber),
+                      trailing: IconButton(
+                          onPressed: () {
+                            try {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          ProfileWidget(contact)));
+                            } catch (e) {
+                              print(e);
+                            }
+                          },
+                          icon: Icon(
+                            CupertinoIcons.chevron_right_circle,
+                            color: ApplicationColorsDark.applicationBlue,
+                          )),
                     ),
                   );
                 },

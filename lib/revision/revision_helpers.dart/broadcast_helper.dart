@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:the_broadcaster/database/local_database.dart';
 import 'package:the_broadcaster/helpers/broadcast_page_helper.dart';
@@ -9,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../models/contact.dart';
 import '../../utils.dart';
+import '../../widgets/select_file_page.dart';
 
 class RevisionBroadCastHelper {
   RevisionBroadCastHelper(this.broadCast) {
@@ -27,6 +29,8 @@ class RevisionBroadCastHelper {
       serviceLocator.get<GlobalFileHelper>().fileMap;
 
   TextEditingController controller = TextEditingController();
+
+  ValueNotifier<List<Contact>> sentMessageInstance = ValueNotifier([]);
 
   init() {
     oldRecipients.value = broadCast.mappedContacts!;
@@ -49,17 +53,30 @@ class RevisionBroadCastHelper {
       recipients =
           contactRecipients.map((e) => e.phoneNumber.toString()).toList();
 
-      final res = await sendSMS(
-        message: controller.text,
-        recipients: recipients,
-      );
-
-      if (res != null) {
+      if (getInstanceVariables().isNotEmpty) {
+        for (var i = 0; i < contactRecipients.length; i++) {
+          print(getCustomMessage(controller.text, contactRecipients[i]));
+          await sendSMS(
+                  message:
+                      getCustomMessage(controller.text, contactRecipients[i]),
+                  recipients: recipients,
+                  sendDirect: true)
+              .then((value) => updateSentMessageInstance(contactRecipients[i]));
+        }
         serviceLocator
             .get<LocalDatabase>()
             .insertContacts(broadCast, _getContacts(), _getMap());
-        // print("Inserted Records");
+      } else {
+        sendSMS(
+          message: controller.text,
+          recipients: recipients,
+        ).then((value) {
+          serviceLocator
+              .get<LocalDatabase>()
+              .insertContacts(broadCast, _getContacts(), _getMap());
+        });
       }
+
       return true;
     } catch (e) {
       return false;
@@ -107,6 +124,12 @@ class RevisionBroadCastHelper {
     newRecipients.value = resMap;
   }
 
+  updateSentMessageInstance(Contact contact) {
+    final List<Contact> newList = List.from(sentMessageInstance.value);
+    newList.add(contact);
+    sentMessageInstance.value = newList;
+  }
+
   shiftSelectedContacts(String fileName) {
     try {
       // print(_getRange(fileName));
@@ -139,5 +162,48 @@ class RevisionBroadCastHelper {
 
   cleanUp() {
     // serviceLocator.get<GlobalFileHelper>().cleanUp();
+  }
+
+  List<String> getInstanceVariables() {
+    final List<String> list = [];
+    final regex = RegExp(r'\$(\w)+').allMatches(controller.text);
+    for (var element in regex) {
+      list.add(
+          controller.text.substring(element.start, element.end).substring(1));
+    }
+    return list;
+  }
+
+  void onPressSelectContacts(BuildContext context) {
+    final list = getInstanceVariables();
+    final Map<String, List<Contact>> resMap = {};
+    for (var element in newRecipients.value.entries) {
+      final keys = serviceLocator
+          .get<GlobalFileHelper>()
+          .getParser(element.key)
+          ?.fieldMap
+          .keys;
+      list.remove('phoneNumber');
+      final newList = keys?.toList();
+      newList?.remove('phoneNumber');
+      if (newList != null && listContainsAll(newList, list)) {
+        resMap.putIfAbsent(element.key, () => element.value);
+      }
+      // print('$list , ${newList}');
+    }
+    // print(resMap);
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => FilePage(contactsMap: resMap)));
+  }
+
+  bool listContainsAll<T>(List<T> a, List<T> b) {
+    final setA = Set.of(a);
+    return setA.containsAll(b);
+  }
+
+  String getCustomMessage(String message, Contact contact) {
+    return message.replaceAllMapped(RegExp(r'\$(\w)+'), (match) {
+      return '${contact.fieldMap[(match.group(0)?.substring(1))]}';
+    });
   }
 }

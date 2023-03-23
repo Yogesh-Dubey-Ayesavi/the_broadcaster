@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:the_broadcaster/database/local_database.dart';
 import 'package:the_broadcaster/default_colors.dart';
 import 'package:the_broadcaster/helpers/global_file_instances.dart';
+import 'package:the_broadcaster/helpers/parser_file_helper.dart';
 import 'package:the_broadcaster/inherited_widget.dart';
 import 'package:the_broadcaster/serviceLocator.dart';
 import 'package:the_broadcaster/widgets/add_files_page.dart';
@@ -12,7 +14,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   setUp();
   Future.delayed(const Duration(seconds: 1), () {
-    serviceLocator.get<GlobalFileHelper>();
+    serviceLocator.get<LocalDatabase>();
   });
   runApp(const MyApp());
 }

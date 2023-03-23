@@ -233,6 +233,27 @@ class _BroadCastPageState extends State<RevisionBroadCastPage> {
                   return const SizedBox();
                 },
               ),
+              ValueListenableBuilder(
+                valueListenable: _helper.sentMessageInstance,
+                builder: (context, contactList, child) {
+                  if (contactList.isNotEmpty) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Subtitle(
+                          'Message sent to ',
+                          color: ApplicationColorsDark.applicationGreen,
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Subtitle(contactList.length.toString())
+                      ],
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
               ApplicationFilledButton(
                 buttonlabel: 'Update Contacts',
                 active: true,
