@@ -91,13 +91,22 @@ class BroadCastHelper {
     if (textEditingController.text.isNotEmpty && _getContacts().isNotEmpty) {
       if (getInstanceVariables().isNotEmpty) {
         for (var i = 0; i < recipients.length; i++) {
-          sendSMS(
-            message: getCustomMessage(textEditingController.text, contacts[i]),
-            recipients: [recipients[i]],
-            sendDirect: true,
-          ).then((value) {
-            updateSentMessageInstance(contacts[i]);
-          });
+          try {
+            sendSMS(
+              message:
+                  getCustomMessage(textEditingController.text, contacts[i]),
+              recipients: [recipients[i]],
+              sendDirect: true,
+            ).then((value) {
+              updateSentMessageInstance(contacts[i]);
+            }).onError((error, stackTrace) {
+              // print('$error');
+            });
+          } catch (e) {
+            print(e);
+            print('$i');
+            break;
+          }
         }
         return createBroadCast(BroadCast(
           textEditingController.text,
@@ -222,6 +231,6 @@ class BroadCastHelper {
 
     return message.replaceAllMapped(RegExp(r'\$(\w)+'), (match) {
       return '${contact.fieldMap[(match.group(0)?.substring(1))]}';
-    });  
+    });
   }
 }
