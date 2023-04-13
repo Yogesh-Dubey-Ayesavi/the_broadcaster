@@ -1,0 +1,76 @@
+# Query: serviceLocator.get
+# ContextLines: 1
+
+18 results - 8 files
+
+lib\main.dart:
+  14    Future.delayed(const Duration(seconds: 1), () {
+  15:     serviceLocator.get<GlobalFileHelper>();
+  16    });
+
+lib\helpers\broadcast_page_helper.dart:
+  24    Map<String, List<Contact>> fileMap =
+  25:       serviceLocator.get<GlobalFileHelper>().fileMap;
+  26  
+
+  98      try {
+  99:       serviceLocator.get<LocalDatabase>().addBroadCast(broadCast);
+  100        return true;
+
+lib\helpers\contacts_helper.dart:
+  16      
+  17:     serviceLocator.get<BroadCastHelper>().loadData();
+  18:     serviceLocator.get<BroadCastHelper>().updateMap();
+  19    }
+
+  21    int getRange(String fileName) {
+  22:     if (serviceLocator.get<GlobalFileHelper>().fileMap[fileName]?.length !=
+  23              null &&
+  24:         serviceLocator.get<GlobalFileHelper>().fileMap[fileName]!.length >
+  25              100) {
+
+  27      } else {
+  28:       return serviceLocator.get<GlobalFileHelper>().fileMap[fileName]!.length;
+  29      }
+
+lib\helpers\select_file_helper.dart:
+  28          loader.value = true;
+  29:         serviceLocator.get<GlobalFileHelper>().updateFiles(file);
+  30          serviceLocator
+
+lib\revision\revision_helpers.dart\broadcast_helper.dart:
+   50      if (res != null) {
+   51:       serviceLocator.get<LocalDatabase>().addContact(broadCast);
+   52      }
+
+   67      oldRecipients.value.forEach((key, value) {
+   68:       final map = Map.from(serviceLocator.get<GlobalFileHelper>().fileMap);
+   69        if (map.containsKey(key)) {
+
+  133    cleanUp() {
+  134:     // serviceLocator.get<GlobalFileHelper>().cleanUp();
+  135    }
+
+lib\widgets\the_broadCast_page.dart:
+  69            ValueListenableBuilder(
+  70:             valueListenable: serviceLocator.get<LocalDatabase>().broadCasts,
+  71              builder: (context, value, child) {
+
+lib\widgets\reusables\contact_tile.dart:
+  51                            contact.toggleIsSelected(val);
+  52:                           // serviceLocator.get<BroadCastHelper>().updateMap();
+  53                            if (isExclusive) {
+
+  61                              cont?.toggleIsSelected(val);
+  62:                             serviceLocator.get<BroadCastHelper>().loadData();
+  63                            }
+
+lib\widgets\reusables\previous_broadcast_tile.dart:
+  24    void onDismiss() {
+  25:     serviceLocator.get<LocalDatabase>().broadCasts.value.removeAt(serviceLocator
+  26          .get<LocalDatabase>()
+
+  29          .indexOf(widget._broadCast));
+  30:     serviceLocator.get<LocalDatabase>().deleteBroadCast(widget._broadCast);
+  31:     // serviceLocator.get<LocalDatabase>().updateBroadCast();
+  32    }
